@@ -1,6 +1,6 @@
 import { getRepository } from 'typeorm';
 
-import AppError from '../errors/AppError';
+// import AppError from '../errors/AppError';
 
 import Transaction from '../models/Transaction';
 import Category from '../models/Category';
@@ -29,7 +29,9 @@ class CreateTransactionService {
       },
     });
 
-    if (!categoryExist) {
+    if (categoryExist) {
+      category_id = categoryExist.id;
+    } else {
       const newCategory = categoryRepository.create({
         title: category,
       });
