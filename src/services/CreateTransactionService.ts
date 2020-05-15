@@ -1,7 +1,8 @@
 import { getRepository } from 'typeorm';
 
-// import AppError from '../errors/AppError';
+import AppError from '../errors/AppError';
 
+import TransactionsRepository from '../repositories/TransactionsRepository';
 import Transaction from '../models/Transaction';
 import Category from '../models/Category';
 
@@ -10,6 +11,7 @@ interface Request {
   value: number;
   type: 'income' | 'outcome';
   category: string;
+  ignoreValue: boolean;
 }
 
 class CreateTransactionService {
@@ -18,10 +20,23 @@ class CreateTransactionService {
     value,
     type,
     category,
+    ignoreValue,
   }: Request): Promise<Transaction> {
     const transactionRepository = getRepository(Transaction);
     const categoryRepository = getRepository(Category);
     let category_id = '';
+
+    if (!['income', 'outcome'].includes(type)) {
+      throw Error('Transaction type invalid.');
+    }
+    const transactionsRepo = new TransactionsRepository();
+    const { total } = await transactionsRepo.getBalance();
+
+    if (!ignoreValue && type === 'outcome' && total < value) {
+      throw new AppError(
+        'You can not create outcome bigger then your balance.',
+      );
+    }
 
     const categoryExist = await categoryRepository.findOne({
       where: {
@@ -40,16 +55,27 @@ class CreateTransactionService {
       category_id = newCategory.id;
     }
 
-    const transaction = transactionRepository.create({
+    const transactionDTO = transactionRepository.create({
       title,
       value,
       type,
       category_id,
     });
 
-    await transactionRepository.save(transaction);
+    await transactionRepository.save(transactionDTO);
 
-    return transaction;
+    const newTransaction = await transactionRepository.findOne(
+      {
+        id: transactionDTO.id,
+      },
+      { relations: ['category'] },
+    );
+
+    if (!newTransaction) {
+      throw new AppError('A problem occurs on create new transaction');
+    }
+
+    return newTransaction;
   }
 }
 
