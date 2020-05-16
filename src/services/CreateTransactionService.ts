@@ -11,7 +11,6 @@ interface Request {
   value: number;
   type: 'income' | 'outcome';
   category: string;
-  ignoreValue: boolean;
 }
 
 class CreateTransactionService {
@@ -20,7 +19,6 @@ class CreateTransactionService {
     value,
     type,
     category,
-    ignoreValue,
   }: Request): Promise<Transaction> {
     const transactionRepository = getRepository(Transaction);
     const categoryRepository = getRepository(Category);
@@ -32,7 +30,7 @@ class CreateTransactionService {
     const transactionsRepo = new TransactionsRepository();
     const { total } = await transactionsRepo.getBalance();
 
-    if (!ignoreValue && type === 'outcome' && total < value) {
+    if (type === 'outcome' && total < value) {
       throw new AppError(
         'You can not create outcome bigger then your balance.',
       );

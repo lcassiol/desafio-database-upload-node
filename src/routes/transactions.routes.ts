@@ -32,7 +32,6 @@ transactionsRouter.post('/', async (request, response) => {
     value,
     type,
     category,
-    ignoreValue: false,
   });
   response.json(transaction);
 });
