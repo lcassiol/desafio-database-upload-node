@@ -25,6 +25,8 @@ export default class CreateTransactions1589484124061
           {
             name: 'value',
             type: 'decimal',
+            precision: 10, // permite 10 digitos lado esquerdo
+            scale: 2, // dois digitos do lado direito
           },
           {
             name: 'category_id',

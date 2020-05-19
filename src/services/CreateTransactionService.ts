@@ -1,4 +1,4 @@
-import { getRepository } from 'typeorm';
+import { getRepository, getCustomRepository } from 'typeorm';
 
 import AppError from '../errors/AppError';
 
@@ -20,15 +20,13 @@ class CreateTransactionService {
     type,
     category,
   }: Request): Promise<Transaction> {
-    const transactionRepository = getRepository(Transaction);
+    const transactionRepository = getCustomRepository(TransactionsRepository);
     const categoryRepository = getRepository(Category);
-    let category_id = '';
 
     if (!['income', 'outcome'].includes(type)) {
       throw Error('Transaction type invalid.');
     }
-    const transactionsRepo = new TransactionsRepository();
-    const { total } = await transactionsRepo.getBalance();
+    const { total } = await transactionRepository.getBalance();
 
     if (type === 'outcome' && total < value) {
       throw new AppError(
@@ -36,28 +34,25 @@ class CreateTransactionService {
       );
     }
 
-    const categoryExist = await categoryRepository.findOne({
+    let transactionCategory = await categoryRepository.findOne({
       where: {
         title: category,
       },
     });
 
-    if (categoryExist) {
-      category_id = categoryExist.id;
-    } else {
-      const newCategory = categoryRepository.create({
+    if (!transactionCategory) {
+      transactionCategory = categoryRepository.create({
         title: category,
       });
 
-      await categoryRepository.save(newCategory);
-      category_id = newCategory.id;
+      await categoryRepository.save(transactionCategory);
     }
 
     const transactionDTO = transactionRepository.create({
       title,
       value,
       type,
-      category_id,
+      category: transactionCategory,
     });
 
     await transactionRepository.save(transactionDTO);

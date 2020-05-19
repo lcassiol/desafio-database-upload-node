@@ -14,7 +14,7 @@ class TransactionsRepository extends Repository<Transaction> {
     const transactionRepository = getRepository(Transaction);
     const transactions = await transactionRepository.find();
 
-    const balance = transactions.reduce(
+    const { income, outcome } = transactions.reduce(
       (accumulator: Balance, transaction: Transaction) => {
         switch (transaction.type) {
           case 'income':
@@ -36,8 +36,8 @@ class TransactionsRepository extends Repository<Transaction> {
       },
     );
 
-    balance.total = balance.income - balance.outcome;
-    return balance;
+    const total = income - outcome;
+    return { income, outcome, total };
   }
 }
 
